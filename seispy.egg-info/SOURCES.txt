@@ -1,0 +1,12 @@
+setup.py
+seispy/__init__.py
+seispy/errors.py
+seispy/stream.py
+seispy/trace.py
+seispy/version.py
+seispy.egg-info/PKG-INFO
+seispy.egg-info/SOURCES.txt
+seispy.egg-info/dependency_links.txt
+seispy.egg-info/top_level.txt
+seispy/filter/__init__.py
+seispy/filter/butter.py
