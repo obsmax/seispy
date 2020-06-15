@@ -210,7 +210,6 @@ class Stream(list):
 
         k = gain / self.std()
         tmin, tmax = np.inf, -np.inf
-        hdls = []
         edge_segments = []
         assert 0 < alpha <= 1.0
 
@@ -242,7 +241,7 @@ class Stream(list):
 
         ax.set_xlim(tmin, tmax)
         ax.set_ylim(-1., i + 1.)
-        return hdls
+        return coll
 
     def shade(self, ax, cmap=None, vmin=None, vmax=None, powergain=1., **kwargs):
         """
