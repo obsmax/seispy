@@ -1,7 +1,5 @@
-import matplotlib.pyplot as plt
 from matplotlib import ticker
 from seispy.time.utc import *
-import datetime
 import numpy as np
 
 MINUTE = 60.
