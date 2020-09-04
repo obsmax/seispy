@@ -10,3 +10,6 @@ seispy.egg-info/dependency_links.txt
 seispy.egg-info/top_level.txt
 seispy/filter/__init__.py
 seispy/filter/butter.py
+seispy/time/__init__.py
+seispy/time/timetick.py
+seispy/time/utc.py
