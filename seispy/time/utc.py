@@ -1,4 +1,3 @@
-import time
 import datetime
 import numpy as np
 
@@ -248,32 +247,7 @@ def minutes_between(t1: UTC, t2: UTC, step: int=1) -> list:
 
 
 if __name__ == '__main__':
-    #
-
-    from obspy.core import UTCDateTime
-
-    x, y = [], []
-    for year in range(1990, 1995):
-        for month in range(1, 13):
-            for day in range(32):
-                for hour in range(0, 25, 1):
-                    try:
-                        x = UTC(year=year, month=month, day=day, hour=hour)
-                        y = UTCDateTime(year=year, month=month, day=day, hour=hour)
-                        assert x.timestamp == y.timestamp
-                        assert str(x) == str(y)
-                    except ValueError:
-                        pass
-
-    t = UTCFromTimestamp(0.)
-    ut = UTCDateTime(0.)
-    print(str(t), str(ut))
-    # assert str(t) == str(ut)
-
     utc = UTC(year=2000, month=12, day=31, hour=10)
-    utd = UTCDateTime(year=2000, month=12, day=31, hour=10)
-    print(utc.timestamp, utd.timestamp)
-
     utc = UTCFromTimestamp(timestamp=utc.timestamp)
     utc = UTCFromStr(string=str(utc))
 

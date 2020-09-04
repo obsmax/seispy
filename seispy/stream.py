@@ -500,4 +500,7 @@ if __name__ == '__main__':
     stream.show(plt.gca(), gain=0.1 * newstd / oldstd, color="g", linestyle="--")
     print(stream)
 
+    from seispy.time.timetick import timetick
+    timetick(plt.gca(), "x")
+
     plt.show()

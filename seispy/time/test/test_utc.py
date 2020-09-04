@@ -3,8 +3,12 @@ import numpy as np
 
 """
 check consistency with obspy
+obspy needed for this tests
 """
-from obspy.core import UTCDateTime
+try:
+    from obspy.core import UTCDateTime
+except ImportError:
+    raise ImportError('obspy not installed')
 
 
 def test_utc():
