@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="c551dac1-e9da-46a9-9f82-0f2c429a7dc2" name="Default Changelist" comment="" />
+    <list default="true" id="c551dac1-e9da-46a9-9f82-0f2c429a7dc2" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/seispy.egg-info/PKG-INFO" beforeDir="false" afterPath="$PROJECT_DIR$/seispy.egg-info/PKG-INFO" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
