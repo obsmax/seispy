@@ -2,6 +2,7 @@ from copy import deepcopy
 import warnings
 import numpy as np
 from seispy.filter.butter import lowpass, highpass, bandpass
+from seispy.time.timetick import timetick
 
 """
 Simplified objects for trace and stream without obspy 
@@ -135,6 +136,7 @@ class Trace(object):
 
     def show(self, ax, *args, **kwargs):
         ax.plot(self.atime(), self.data, *args, **kwargs)
+        timetick(ax=ax, axis="x", major=True, minor=True)
 
     # ======================= PROCESSING
     def bandpass(self, freqmin, freqmax, order, zerophase):

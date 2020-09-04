@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from seispy.trace import Trace
 from seispy.errors import EmptyStreamError, DataTypeError, \
     SamplingError, SamplingRateError, NptsError, StarttimeError
+from seispy.time.timetick import timetick
 
 
 def readseispystream(npzfilename):
@@ -241,6 +242,8 @@ class Stream(list):
 
         ax.set_xlim(tmin, tmax)
         ax.set_ylim(-1., i + 1.)
+
+        timetick(ax=ax, axis="x", major=True, minor=True)
         return coll
 
     def shade(self, ax, cmap=None, vmin=None, vmax=None, powergain=1., **kwargs):
@@ -316,6 +319,9 @@ class Stream(list):
 
         ax.figure.colorbar(coll, cax=cax, ticks=[vmin, 0, vmax])
         cax.set_yticklabels(["-", "0", "+"])
+
+        timetick(ax=ax, axis="x", major=True, minor=True)
+
         return coll, cax
 
     def savez(self, npzfilename):
@@ -499,8 +505,5 @@ if __name__ == '__main__':
     # plt.show()
     stream.show(plt.gca(), gain=0.1 * newstd / oldstd, color="g", linestyle="--")
     print(stream)
-
-    from seispy.time.timetick import timetick
-    timetick(plt.gca(), "x")
 
     plt.show()
