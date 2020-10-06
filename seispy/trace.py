@@ -139,6 +139,10 @@ class Trace(object):
         timetick(ax=ax, axis="x", major=True, minor=True)
 
     # ======================= PROCESSING
+    def detrend(self):
+        t = self.rtime()
+        self.data -= np.polyval(np.polyfit(t, self.data, deg=1), t)
+
     def bandpass(self, freqmin, freqmax, order, zerophase):
         self.data = bandpass(
             self.data,

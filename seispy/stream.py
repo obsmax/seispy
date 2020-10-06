@@ -282,7 +282,8 @@ class Stream(list):
             dmax = np.max([dmax, d.max()])
             # -----
             D.append(d)
-            D.append(d)
+            if n <= len(self) - 2:
+                D.append(d * 0.)
 
             # -----
             dt = tr.delta
@@ -303,8 +304,11 @@ class Stream(list):
         if vmin is None:
             vmin = dmin
 
-        coll = ax.pcolormesh(T, I, D, cmap=cmap, vmin=vmin, vmax =vmax,
-                             **kwargs)
+        print(T.shape, I.shape, D.shape)
+        coll = ax.pcolormesh(
+            T, I, D,
+            cmap=cmap, vmin=vmin, vmax=vmax,
+            **kwargs)
 
         ax.set_xlim((T.min(), T.max()))
         ax.set_ylim((0, I.max()))
