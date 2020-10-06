@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: seispy
-Version: 1.1
+Version: 1.1.1
 Summary: UNKNOWN
 Home-page: UNKNOWN
 Author: Maximilien Lehujeur
@@ -16,4 +16,7 @@ Description: # SEISPY
         * No dependency to obspy, although conversion from obspy is handled
         
 Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: Linux
+Requires-Python: >=3.7
 Description-Content-Type: text/markdown
