@@ -14,13 +14,21 @@ HELP = """viz
 -h            help message
 -v            verbose
 # ====== display options
--m  i         mode 1=show 2=shade 12=both
+-m  i         mode 
+              trace modes :    0=basic
+              stream modes :   
+                1  = show
+                11 = show with obspy like decimation 
+                2  = shade 
+                12 = modes 1 and 2
 -g  f         gain (for mode 0)
 -pg  f        powergain (for mode 1)
 # ====== preprocessing options (ordered)
 -d            detrend
--bp f f f     bandpass fmin, fmax, order
--gbp f f      Gaussian bandpass fcenter, alpha
+-tap f        taper width (s)
+-bp f f f     bandpass fmin(Hz), fmax(Hz), order(e.g. 4.)
+-gbp f f      Gaussian bandpass fcenter(Hz), alpha(e.g. 15.)
+-f            move to fourier domain
 """
 
 
@@ -55,6 +63,10 @@ def read_arguments():
             elif arg == "-d":
                 options['prepro'].append(('-d', ))
 
+            elif arg == "-tap":
+                width = float(argv.pop(0))
+                options['prepro'].append(('-tap', width))
+
             elif arg == "-bp":
                 fmin = float(argv.pop(0))
                 fmax = float(argv.pop(0))
@@ -65,6 +77,9 @@ def read_arguments():
                 fcenter = float(argv.pop(0))
                 alpha = float(argv.pop(0))
                 options['prepro'].append(('-gbp', fcenter, alpha))
+
+            elif arg == "-f":
+                options['prepro'].append(('-f', ))
 
             else:
                 raise NotImplementedError(arg)
@@ -82,6 +97,11 @@ def prepro(st: Stream, options):
             for tr in st:
                 tr.detrend()
 
+        elif cmd == "-tap":
+            width = arg[1]
+            for tr in st:
+                tr.taperwidth(width)
+
         elif cmd == "-bp":
             fmin, fmax, order = arg[1:]
             for tr in st:
@@ -94,31 +114,51 @@ def prepro(st: Stream, options):
             for tr in st:
                 tr.gaussbandpass(freq0=fcenter, alpha=alpha)
 
+        elif cmd == "-f":
+            st = Stream([tr.to_fourier() for tr in st])
+
     if options['-v']:
         for tr in st:
             print(tr)
 
+    return st
 
 if __name__ == '__main__':
+
     npzfile, options = read_arguments()
 
     st = readseispystream(npzfile)
     st.sort_by('distance')
 
-    prepro(st, options)
+    st = prepro(st, options)
 
-    if options['-m'] == 1:
-        import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
+
+    if options['-m'] == 0:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        for tr in st:
+            tr: Trace
+            # tr.obs(ax=plt.gca()
+            tr.show(ax)
+        plt.show()
+
+    elif options['-m'] == 1:
         fig = plt.figure()
         ax = fig.add_subplot(111)
         st.show(ax, gain=options['-g'], seedticks=True)
-
         plt.show()
-    elif options['-m'] == 2:
-        import matplotlib.pyplot as plt
+
+    elif options['-m'] == 11:
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        st.shade(ax, powergain=options['-pg'])
+        st.show(ax, gain=options['-g'], seedticks=True, obspy_decim=True)
+        plt.show()
+
+    elif options['-m'] == 2:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        st.shade(ax, powergain=options['-pg'], seedticks=True)
         plt.show()
 
     elif options['-m'] == 12:
@@ -126,7 +166,7 @@ if __name__ == '__main__':
         fig = plt.figure()
         ax = fig.add_subplot(111)
         st.shade(ax, powergain=options['-pg'], cmap=plt.get_cmap("seismic"))
-        st.show(ax, gain=options['-g'])
+        st.show(ax, gain=options['-g'], seedticks=True)
         plt.show()
 
     else:

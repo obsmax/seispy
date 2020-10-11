@@ -2,8 +2,9 @@ from copy import deepcopy
 import warnings
 import numpy as np
 from seispy.filter.butter import lowpass, highpass, bandpass
+from seispy.filter.taper import costaperwidth
 from seispy.time.timetick import timetick
-
+from scipy.fftpack import fft, ifft, fftfreq, next_fast_len
 """
 Simplified objects for trace and stream without obspy 
 """
@@ -59,14 +60,14 @@ class Trace(object):
         self.starttime = trace.stats.starttime.timestamp
         self.data = trace.data
 
-        for key in ['longitude', 'latitude', 'elevation', 'distance']:
+        if hasattr(trace.stats, 'coordinates'):
+            for key in ['longitude', 'latitude', 'elevation', 'distance']:
+                if hasattr(trace.stats.coordinates, key):
+                    try:
+                        self.__setattr__(key, trace.stats.coordinates[key])
 
-            try:
-                self.__setattr__(key, trace.stats.coordinates[key])
-
-            except (AttributeError, NameError, KeyError):
-
-                warnings.warn('could not set attribute {}'.format(key))
+                    except (AttributeError, NameError, KeyError) as e:
+                        warnings.warn(f'could not set attribute {key}: >{str(e)}<')
 
     def to_obspy(self):
         """
@@ -132,16 +133,40 @@ class Trace(object):
 
     def obspy_like_show(self, ax, nwin=1000, *args, **kwargs):
         timestamps, values = self.obspy_like_decim(nwin)
-        ax.plot(timestamps, values, *args, **kwargs)
+        return ax.plot(timestamps, values, *args, **kwargs)
 
     def show(self, ax, *args, **kwargs):
-        ax.plot(self.atime(), self.data, *args, **kwargs)
+        hdl = ax.plot(self.atime(), self.data, *args, **kwargs)
         timetick(ax=ax, axis="x", major=True, minor=True)
+        return hdl
+
+    # ======================= CLASS CONVERSIONS
+    def to_fourier(self, copy=False):
+
+        tr = FourierDomainTrace(
+            seedid=self.seedid,
+            delta=self.delta,
+            starttime=self.starttime,
+            longitude=self.longitude,
+            latitude=self.latitude,
+            elevation=self.elevation,
+            distance=self.distance,
+            data=fft(self.data))
+        if copy:
+            return tr.copy()
+        return tr
 
     # ======================= PROCESSING
     def detrend(self):
         t = self.rtime()
         self.data -= np.polyval(np.polyfit(t, self.data, deg=1), t)
+
+    def taperwidth(self, width):
+        tap = costaperwidth(
+            npts=self.npts,
+            sampling_rate=1. / self.delta,
+            width=width, dtype=self.data.dtype)
+        self.data *= tap
 
     def bandpass(self, freqmin, freqmax, order, zerophase):
         self.data = bandpass(
@@ -176,3 +201,74 @@ class Trace(object):
         g = np.exp(-alpha * ((np.abs(freq) - freq0) / freq0) ** 2.0)
 
         self.data = ifft(g * fft(self.data, nfft)).real
+
+
+class DomainError(Exception):
+    pass
+
+
+class FourierDomainTrace(Trace):
+
+    def first_negative_frequency(self):
+        return self.npts // 2 + self.npts % 2
+
+    def frequencies(self):
+        return fftfreq(self.npts, self.delta)
+
+    def side(self, sign=1, zero=True, copy=False):
+        freqs = self.frequencies()
+        i_first_negative = self.first_negative_frequency()
+
+        if sign > 0:
+            if zero:
+                f = freqs[:i_first_negative]
+                d = self.data[:i_first_negative]
+            else:
+                f = freqs[1:i_first_negative]
+                d = self.data[1:i_first_negative]
+        elif sign < 0:
+            f = freqs[i_first_negative:]
+            d = self.data[i_first_negative, :]
+        else:
+            f = freqs
+            d = self.data
+
+        if copy:
+            d = d.copy()
+
+        return f, d
+
+    def show(self, ax, *args, **kwargs):
+        f, d = self.side(sign=1, copy=False)
+        return ax.plot(f, np.abs(d), *args, **kwargs)
+
+    def to_trace(self):
+        return Trace(
+            seedid=self.seedid,
+            delta=self.delta,
+            starttime=self.starttime,
+            longitude=self.longitude,
+            latitude=self.latitude,
+            elevation=self.elevation,
+            distance=self.distance,
+            data=ifft(self.data))
+
+    # ======================= PROCESSING
+    def detrend(self, *args, **kwargs):
+        raise DomainError("cannot detrend a fourier domain trace")
+
+    def taperwidth(self, *args, **kwargs):
+        raise DomainError("cannot taper a fourier domain trace")
+
+    def lowpass(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def highpass(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def bandpass(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def gaussbandpass(self, *args, **kwargs):
+        raise NotImplementedError
+

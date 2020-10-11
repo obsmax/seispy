@@ -3,7 +3,7 @@ import numpy as np
 from numpy.lib.npyio import _savez
 from matplotlib.collections import LineCollection
 import matplotlib.pyplot as plt
-from seispy.trace import Trace
+from seispy.trace import Trace, FourierDomainTrace
 from seispy.errors import EmptyStreamError, DataTypeError, \
     SamplingError, SamplingRateError, NptsError, StarttimeError
 from seispy.time.timetick import timetick
@@ -209,25 +209,42 @@ class Stream(list):
         if len(self) <= 1:
             raise ValueError('too few items for st.show, ')
 
-        k = gain / self.std()
-        tmin, tmax = np.inf, -np.inf
+        fourier_domain = np.all([isinstance(tr, FourierDomainTrace) for tr in self])
+
+        xmin, xmax = np.inf, -np.inf
         edge_segments = []
         assert 0 < alpha <= 1.0
-
         i = 0
-        for i, tr in enumerate(self):
-            if obspy_decim:
-                t, dat = tr.obspy_like_decim(nwin=obspy_decim_nwin)
-                dat = np.column_stack((t, k * dat + i))
-            else:
-                dat = np.column_stack((tr.atime(), k * tr.data + i))
 
-            edge_segments.append(dat)
+        if fourier_domain:
+            fs, dats = [], []
+            for i, tr in enumerate(self):
+                f, dat = tr.side(sign=1, zero=False, copy=False)
+                fs.append(f)
+                dats.append(np.abs(dat))
 
-            if tr.starttime < tmin:
-                tmin = tr.starttime
-            if tr.endtime > tmax:
-                tmax = tr.endtime
+            k = gain / np.std(np.hstack(dats))
+            xmin = np.hstack(fs).min()
+            xmax = np.hstack(fs).max()
+
+            for i, (f, dat) in enumerate(zip(fs, dats)):
+                edge_segments.append(np.column_stack((f, k * dat + i)))
+
+        else:
+            k = gain / self.std()
+            for i, tr in enumerate(self):
+                if obspy_decim:
+                    t, dat = tr.obspy_like_decim(nwin=obspy_decim_nwin)
+                    dat = np.column_stack((t, k * dat + i))
+                else:
+                    dat = np.column_stack((tr.atime(), k * tr.data + i))
+
+                edge_segments.append(dat)
+
+                if tr.starttime < xmin:
+                    xmin = tr.starttime
+                if tr.endtime > xmax:
+                    xmax = tr.endtime
 
         coll = LineCollection(
             edge_segments, colors=color, alpha=alpha,
@@ -240,13 +257,16 @@ class Stream(list):
             ax.set_yticks(yticks)
             ax.set_yticklabels(yticklabels)
 
-        ax.set_xlim(tmin, tmax)
+        ax.set_xlim(xmin, xmax)
         ax.set_ylim(-1., i + 1.)
 
-        timetick(ax=ax, axis="x", major=True, minor=True)
+        if fourier_domain:
+            pass
+        else:
+            timetick(ax=ax, axis="x", major=True, minor=True)
         return coll
 
-    def shade(self, ax, cmap=None, vmin=None, vmax=None, powergain=1., **kwargs):
+    def shade(self, ax, cmap=None, vmin=None, vmax=None, powergain=1., seedticks=False, **kwargs):
         """
 
         :param ax: obsmax4.graphictools.gutils.myax object, use obsmax4.graphictools.gca
@@ -263,15 +283,25 @@ class Stream(list):
         assert len(self)
         kwargs.setdefault('rasterized', True)
 
+        fourier_domain = np.all([isinstance(tr, FourierDomainTrace) for tr in self])
+
         if cmap is None:
-            cmap = plt.get_cmap('gray')
+            if fourier_domain:
+                cmap = plt.get_cmap('nipy_spectral')
+            else:
+                cmap = plt.get_cmap('gray')
 
         nmax = np.max([len(tr.data) for tr in self])
 
         T, I, D = [], [], []
         dmin, dmax = np.inf, -np.inf
         for n, tr in enumerate(self):
-            d = tr.data[:]
+            if fourier_domain:
+                f, d = tr.side(sign=1, zero=False, copy=False)
+                d = np.abs(d)
+            else:
+                d = tr.data[:]
+
             if powergain != 1.:
                 d = np.sign(d) * np.abs(d) ** powergain
 
@@ -286,10 +316,16 @@ class Stream(list):
                 D.append(d * 0.)
 
             # -----
-            dt = tr.delta
-            t = -.5 * dt + tr.starttime + np.arange(nmax+1) * dt
-            T.append(t)
-            T.append(t)
+            if fourier_domain:
+                df = f[1] - f[0]
+                f = -.5 * df + np.hstack((f, (f[-1] + df) * np.ones(nmax + 1 - len(f))))
+                T.append(f)
+                T.append(f)
+            else:
+                dt = tr.delta
+                t = -.5 * dt + tr.starttime + np.arange(nmax+1) * dt
+                T.append(t)
+                T.append(t)
 
             # -----
             I.append(n - .5 * np.ones(len(d) + 1))
@@ -304,11 +340,22 @@ class Stream(list):
         if vmin is None:
             vmin = dmin
 
-        print(T.shape, I.shape, D.shape)
+        if fourier_domain:
+            vmin=0.
+            vmax=vmax
+
+        # print(T.shape, I.shape, D.shape)
         coll = ax.pcolormesh(
             T, I, D,
-            cmap=cmap, vmin=vmin, vmax=vmax,
+            cmap=cmap,
+            vmin=vmin, vmax=vmax,
             **kwargs)
+
+        if seedticks:
+            yticks = np.arange(len(self))
+            yticklabels = [_.seedid for _ in self]
+            ax.set_yticks(yticks)
+            ax.set_yticklabels(yticklabels)
 
         ax.set_xlim((T.min(), T.max()))
         ax.set_ylim((0, I.max()))
@@ -324,7 +371,8 @@ class Stream(list):
         ax.figure.colorbar(coll, cax=cax, ticks=[vmin, 0, vmax])
         cax.set_yticklabels(["-", "0", "+"])
 
-        timetick(ax=ax, axis="x", major=True, minor=True)
+        if not fourier_domain:
+            timetick(ax=ax, axis="x", major=True, minor=True)
 
         return coll, cax
 
