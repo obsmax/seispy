@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from seispy.trace import Trace, FourierDomainTrace
 from seispy.errors import EmptyStreamError, DataTypeError, \
     SamplingError, SamplingRateError, NptsError, StarttimeError
-from seispy.time.timetick import timetick
+from timetools.timetick import timetick
+# from seispy.time.timetick import timetick
 
 
 def readseispystream(npzfilename):

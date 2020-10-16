@@ -3,8 +3,8 @@ import warnings
 import numpy as np
 from seispy.filter.butter import lowpass, highpass, bandpass
 from seispy.filter.taper import costaperwidth
-from seispy.time.timetick import timetick
 from scipy.fftpack import fft, ifft, fftfreq, next_fast_len
+from timetools.timetick import timetick
 """
 Simplified objects for trace and stream without obspy 
 """
