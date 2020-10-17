@@ -31,6 +31,6 @@ setuptools.setup(
         "Operating System :: Linux"],
     python_requires='>=3.7',
     install_requires=[
-        'timetools @ git+https://gitlab.com/obsmax/timetools.git@v0.0.3#egg=timetools',
+        'timetools @ git+https://gitlab.com/obsmax/timetools.git@v0.0.5#egg=timetools',
         'numpy', 'scipy', 'matplotlib'],
     scripts=[os.path.join("seispy", "bin", "viz"), ])
