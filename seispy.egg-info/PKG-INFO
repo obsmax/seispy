@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: seispy
-Version: 1.1.2
+Version: -v1.1.2-
 Summary: UNKNOWN
 Home-page: UNKNOWN
 Author: Maximilien Lehujeur
@@ -15,6 +15,23 @@ Description: # SEISPY
         * Save and load seismic data using numpy npz format (system independent)
         * No dependency to obspy, although conversion from obspy is handled
         
+        Download 
+        ```
+        cd $INSTALLPATH
+        conda clone https://github.com/obsmax/seispy.git
+        ```
+        
+        Create the environment
+        ```
+        conda create -n sp python=3.7 --yes
+        conda activate sp
+        ```
+        
+        Install (editable mode)
+        ```
+        cd $INSTALLPATH/seispy
+        pip install -e .
+        ```
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: Operating System :: Linux
